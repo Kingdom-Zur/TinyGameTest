@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>记忆力锻炼游戏</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f3f3f3;
+        }
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #fff;
+        }
+        .game-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .game-header h1 {
+            font-size: 3rem;
+            color: #333;
+        }
+        .game-header p {
+            font-size: 1.2rem;
+            color: #666;
+            margin-top: 10px;
+        }
+        .game-header button {
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .game-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 80%;
+            margin-top: 30px;
+        }
+        .game-grid div {
+            width: 30px;
+            height: 30px;
+            margin: 5px;
+            background-color: #ddd;
+            border-radius: 5px;
+        }
+        .correct {
+            background-color: green;
+        }
+        .incorrect {
+            background-color: red;
+        }
+        .game-play {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .number-display {
+            font-size: 3rem;
+            margin: 20px 0;
+        }
+        .timer {
+            font-size: 2rem;
+            margin: 20px;
+        }
+        .input-container {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input {
+            padding: 10px;
+            font-size: 1.5rem;
+            width: 200px;
+            text-align: center;
+        }
+        button.submit-btn {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        .score {
+            font-size: 2rem;
+            margin-top: 30px;
+        }
+        .evaluation {
+            font-size: 2rem;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="game-header">
+        <h1>记忆力锻炼游戏</h1>
+        <p>在每一关卡内，记住显示的数字，在倒计时结束后输入数字进行测试。</p>
+        <button onclick="startGame()">开始游戏</button>
+    </div>
+    
+    <div class="game-play">
+        <div class="number-display" id="number-display"></div>
+        <div class="timer" id="timer"></div>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="请输入数字">
+            <button class="submit-btn" onclick="checkAnswer()">提交答案</button>
+        </div>
+        <div class="game-grid" id="game-grid"></div>
+        <div class="score" id="score-display"></div>
+        <div class="evaluation" id="evaluation-display"></div>
+    </div>
+</div>
+
+<script>
+    let currentLevel = 1;
+    let currentNumber = '';
+    let timer;
+    let score = 0;
+    const maxLevel = 20;
+    const levelScores = Array.from({ length: maxLevel }, (_, i) => (i + 1) * 5);
+
+    function startGame() {
+        document.querySelector('.game-header').style.display = 'none';
+        document.querySelector('.game-play').style.display = 'flex';
+        startLevel();
+    }
+
+    function startLevel() {
+        if (currentLevel > maxLevel) {
+            endGame();
+            return;
+        }
+
+        const numberLength = currentLevel;
+        currentNumber = generateNumber(numberLength);
+        document.getElementById('number-display').textContent = currentNumber;
+        document.getElementById('timer').textContent = '5';
+        document.getElementById('user-input').value = '';
+        
+        // Start countdown
+        let timeLeft = 5;
+        timer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                showInputField();
+            }
+        }, 1000);
+    }
+
+    function showInputField() {
+        document.getElementById('user-input').disabled = false;
+        document.getElementById('user-input').focus();
+    }
+
+    function checkAnswer() {
+        const userInput = document.getElementById('user-input').value;
+        const isCorrect = userInput === currentNumber;
+        
+        if (isCorrect) {
+            document.getElementById('game-grid').children[currentLevel - 1].classList.add('correct');
+            score += levelScores[currentLevel - 1];
+        } else {
+            document.getElementById('game-grid').children[currentLevel - 1].classList.add('incorrect');
+        }
+
+        currentLevel++;
+        updateProgress();
+        startLevel();
+    }
+
+    function generateNumber(length) {
+        return Array.from({ length }, () => Math.floor(Math.random() * 10)).join('');
+    }
+
+    function updateProgress() {
+        const gameGrid = document.getElementById('game-grid');
+        for (let i = gameGrid.children.length; i < currentLevel; i++) {
+            const box = document.createElement('div');
+            gameGrid.appendChild(box);
+        }
+        document.getElementById('score-display').textContent = `当前得分: ${score}`;
+
+        if (currentLevel > maxLevel) {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        const evaluation = score >= 840 ? '优秀' : score >= 500 ? '良好' : '需要努力';
+        document.getElementById('evaluation-display').textContent = `游戏结束，您的评价: ${evaluation}`;
+    }
+</script>
+
+</body>
+</html>
